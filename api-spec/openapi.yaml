@@ -1,0 +1,2098 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: BlinkBuy Malawi - Local Services Marketplace API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: users
+    description: User management
+  - name: services
+    description: Service listings
+  - name: jobs
+    description: Job postings
+  - name: marketplace
+    description: Marketplace items
+  - name: messages
+    description: Messaging system
+  - name: reviews
+    description: Reviews and ratings
+  - name: notifications
+    description: Notifications
+  - name: admin
+    description: Admin operations
+  - name: categories
+    description: Service categories
+  - name: emergency
+    description: Emergency mode
+  - name: payments
+    description: Payment records
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # ─── AUTH ───────────────────────────────────────────────────────────────
+  /auth/register:
+    post:
+      operationId: registerUser
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterBody"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /auth/login:
+    post:
+      operationId: loginUser
+      tags: [auth]
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Login success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /auth/logout:
+    post:
+      operationId: logoutUser
+      tags: [auth]
+      summary: Logout user
+      responses:
+        "200":
+          description: Logged out
+
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      tags: [auth]
+      summary: Get current user session
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  # ─── USERS ──────────────────────────────────────────────────────────────
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List users (admin)
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+        - name: verified
+          in: query
+          schema:
+            type: boolean
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: location
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsersListResponse"
+
+  /users/{id}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get user profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+    put:
+      operationId: updateUser
+      tags: [users]
+      summary: Update user profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserBody"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{id}/availability:
+    put:
+      operationId: updateAvailability
+      tags: [users]
+      summary: Toggle user online/offline status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AvailabilityBody"
+      responses:
+        "200":
+          description: Availability updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{id}/report:
+    post:
+      operationId: reportUser
+      tags: [users]
+      summary: Report a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportBody"
+      responses:
+        "201":
+          description: Report submitted
+
+  /users/top-rated:
+    get:
+      operationId: getTopRatedWorkers
+      tags: [users]
+      summary: Get top-rated workers
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Top-rated workers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkersListResponse"
+
+  /users/nearby:
+    get:
+      operationId: getNearbyWorkers
+      tags: [users]
+      summary: Get workers near a location
+      parameters:
+        - name: location
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: available
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Nearby workers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkersListResponse"
+
+  /users/dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [users]
+      summary: Get worker dashboard statistics
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  # ─── CATEGORIES ─────────────────────────────────────────────────────────
+  /categories:
+    get:
+      operationId: listCategories
+      tags: [categories]
+      summary: List all service categories
+      responses:
+        "200":
+          description: Categories
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoriesResponse"
+
+  # ─── SERVICES ───────────────────────────────────────────────────────────
+  /services:
+    get:
+      operationId: listServices
+      tags: [services]
+      summary: List service listings
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: location
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+        - name: minRating
+          in: query
+          schema:
+            type: number
+        - name: available
+          in: query
+          schema:
+            type: boolean
+        - name: featured
+          in: query
+          schema:
+            type: boolean
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Service listings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServicesListResponse"
+    post:
+      operationId: createService
+      tags: [services]
+      summary: Create a service listing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateServiceBody"
+      responses:
+        "201":
+          description: Service created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+
+  /services/trending:
+    get:
+      operationId: getTrendingServices
+      tags: [services]
+      summary: Get trending services
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Trending services
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServicesListResponse"
+
+  /services/featured:
+    get:
+      operationId: getFeaturedServices
+      tags: [services]
+      summary: Get featured/boosted service listings
+      responses:
+        "200":
+          description: Featured services
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServicesListResponse"
+
+  /services/{id}:
+    get:
+      operationId: getService
+      tags: [services]
+      summary: Get a service listing
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Service detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceDetail"
+    put:
+      operationId: updateService
+      tags: [services]
+      summary: Update a service listing
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateServiceBody"
+      responses:
+        "200":
+          description: Updated service
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+    delete:
+      operationId: deleteService
+      tags: [services]
+      summary: Delete a service listing
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /services/{id}/book:
+    post:
+      operationId: bookService
+      tags: [services]
+      summary: Book a service
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookServiceBody"
+      responses:
+        "201":
+          description: Booking created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+
+  # ─── JOBS ────────────────────────────────────────────────────────────────
+  /jobs:
+    get:
+      operationId: listJobs
+      tags: [jobs]
+      summary: List job postings
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: location
+          in: query
+          schema:
+            type: string
+        - name: urgency
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Job postings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobsListResponse"
+    post:
+      operationId: createJob
+      tags: [jobs]
+      summary: Post a job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateJobBody"
+      responses:
+        "201":
+          description: Job created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+
+  /jobs/{id}:
+    get:
+      operationId: getJob
+      tags: [jobs]
+      summary: Get job details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Job detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobDetail"
+    put:
+      operationId: updateJob
+      tags: [jobs]
+      summary: Update job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateJobBody"
+      responses:
+        "200":
+          description: Updated job
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+
+  /jobs/{id}/apply:
+    post:
+      operationId: applyToJob
+      tags: [jobs]
+      summary: Apply to a job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplyJobBody"
+      responses:
+        "201":
+          description: Application submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobApplication"
+
+  /jobs/{id}/applications:
+    get:
+      operationId: getJobApplications
+      tags: [jobs]
+      summary: Get applications for a job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Applications
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobApplicationsResponse"
+
+  /jobs/{id}/complete:
+    post:
+      operationId: completeJob
+      tags: [jobs]
+      summary: Mark job as complete
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Job marked complete
+
+  # ─── MARKETPLACE ────────────────────────────────────────────────────────
+  /marketplace:
+    get:
+      operationId: listMarketplaceItems
+      tags: [marketplace]
+      summary: List marketplace items
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [sale, rent]
+        - name: location
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Marketplace items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketplaceListResponse"
+    post:
+      operationId: createMarketplaceItem
+      tags: [marketplace]
+      summary: Post marketplace item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMarketplaceItemBody"
+      responses:
+        "201":
+          description: Item created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketplaceItem"
+
+  /marketplace/{id}:
+    get:
+      operationId: getMarketplaceItem
+      tags: [marketplace]
+      summary: Get marketplace item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Marketplace item detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketplaceItem"
+    delete:
+      operationId: deleteMarketplaceItem
+      tags: [marketplace]
+      summary: Delete marketplace item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── MESSAGES ───────────────────────────────────────────────────────────
+  /conversations:
+    get:
+      operationId: listConversations
+      tags: [messages]
+      summary: List user conversations
+      responses:
+        "200":
+          description: Conversations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationsResponse"
+    post:
+      operationId: createConversation
+      tags: [messages]
+      summary: Start or get a conversation with a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateConversationBody"
+      responses:
+        "200":
+          description: Conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+
+  /conversations/{id}/messages:
+    get:
+      operationId: getMessages
+      tags: [messages]
+      summary: Get messages in a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: before
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Messages
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessagesResponse"
+    post:
+      operationId: sendMessage
+      tags: [messages]
+      summary: Send a message
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendMessageBody"
+      responses:
+        "201":
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+
+  /conversations/{id}/read:
+    put:
+      operationId: markMessagesRead
+      tags: [messages]
+      summary: Mark conversation messages as read
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Marked read
+
+  # ─── REVIEWS ─────────────────────────────────────────────────────────────
+  /reviews:
+    get:
+      operationId: listReviews
+      tags: [reviews]
+      summary: List reviews for a worker/service
+      parameters:
+        - name: workerId
+          in: query
+          schema:
+            type: string
+        - name: serviceId
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Reviews
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewsResponse"
+    post:
+      operationId: createReview
+      tags: [reviews]
+      summary: Submit a review
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReviewBody"
+      responses:
+        "201":
+          description: Review submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+
+  # ─── NOTIFICATIONS ───────────────────────────────────────────────────────
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: Get user notifications
+      parameters:
+        - name: unreadOnly
+          in: query
+          schema:
+            type: boolean
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationsResponse"
+
+  /notifications/read-all:
+    put:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      summary: Mark all notifications as read
+      responses:
+        "200":
+          description: Marked read
+
+  # ─── EMERGENCY ───────────────────────────────────────────────────────────
+  /emergency/workers:
+    get:
+      operationId: getEmergencyWorkers
+      tags: [emergency]
+      summary: Get available workers for emergency mode
+      parameters:
+        - name: location
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Available emergency workers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkersListResponse"
+
+  # ─── PAYMENTS ─────────────────────────────────────────────────────────────
+  /payments:
+    get:
+      operationId: listPayments
+      tags: [payments]
+      summary: List payment records (admin)
+      responses:
+        "200":
+          description: Payment records
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentsResponse"
+    post:
+      operationId: submitPayment
+      tags: [payments]
+      summary: Submit payment proof
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitPaymentBody"
+      responses:
+        "201":
+          description: Payment submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+
+  # ─── ADMIN ───────────────────────────────────────────────────────────────
+  /admin/users/{id}/verify:
+    post:
+      operationId: adminVerifyUser
+      tags: [admin]
+      summary: Admin - Assign verified badge to user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminVerifyBody"
+      responses:
+        "200":
+          description: User verified
+
+  /admin/users/{id}/suspend:
+    post:
+      operationId: adminSuspendUser
+      tags: [admin]
+      summary: Admin - Suspend a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User suspended
+
+  /admin/users/{id}/trusted:
+    post:
+      operationId: adminMarkTrusted
+      tags: [admin]
+      summary: Admin - Mark user as trusted worker
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User marked as trusted
+
+  /admin/analytics:
+    get:
+      operationId: getAdminAnalytics
+      tags: [admin]
+      summary: Platform analytics
+      responses:
+        "200":
+          description: Analytics data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAnalytics"
+
+  /admin/reports:
+    get:
+      operationId: listReports
+      tags: [admin]
+      summary: List user reports
+      responses:
+        "200":
+          description: Reports
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportsResponse"
+
+  /admin/featured/{serviceId}/activate:
+    post:
+      operationId: activateFeaturedListing
+      tags: [admin]
+      summary: Admin - Activate featured listing
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Featured listing activated
+
+# ─── SCHEMAS ────────────────────────────────────────────────────────────────
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    # ─── Auth ───────────────────────────────────────────────────────────────
+    RegisterBody:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        name:
+          type: string
+        phone:
+          type: string
+        whatsapp:
+          type: string
+        role:
+          type: string
+          enum: [customer, worker, both]
+        location:
+          type: string
+      required:
+        - email
+        - password
+        - name
+        - phone
+        - role
+
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+      required:
+        - token
+        - user
+
+    # ─── User ───────────────────────────────────────────────────────────────
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        phone:
+          type: string
+        whatsapp:
+          type: string
+        role:
+          type: string
+          enum: [customer, worker, both, admin]
+        location:
+          type: string
+        profilePhoto:
+          type: string
+        bio:
+          type: string
+        isOnline:
+          type: boolean
+        isVerified:
+          type: boolean
+        isTrusted:
+          type: boolean
+        isSuspended:
+          type: boolean
+        rating:
+          type: number
+        reviewCount:
+          type: integer
+        jobsCompleted:
+          type: integer
+        profileStrength:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - email
+        - name
+        - role
+
+    UserProfile:
+      allOf:
+        - $ref: "#/components/schemas/User"
+        - type: object
+          properties:
+            services:
+              type: array
+              items:
+                $ref: "#/components/schemas/Service"
+            reviews:
+              type: array
+              items:
+                $ref: "#/components/schemas/Review"
+            workPhotos:
+              type: array
+              items:
+                type: string
+
+    UpdateUserBody:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        whatsapp:
+          type: string
+        location:
+          type: string
+        bio:
+          type: string
+        profilePhoto:
+          type: string
+        role:
+          type: string
+        priceRange:
+          type: string
+        servicesOffered:
+          type: array
+          items:
+            type: string
+
+    AvailabilityBody:
+      type: object
+      properties:
+        isOnline:
+          type: boolean
+      required:
+        - isOnline
+
+    ReportBody:
+      type: object
+      properties:
+        reason:
+          type: string
+        description:
+          type: string
+      required:
+        - reason
+
+    UsersListResponse:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        total:
+          type: integer
+      required:
+        - users
+        - total
+
+    WorkersListResponse:
+      type: object
+      properties:
+        workers:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        total:
+          type: integer
+      required:
+        - workers
+        - total
+
+    DashboardStats:
+      type: object
+      properties:
+        totalJobsCompleted:
+          type: integer
+        activeListings:
+          type: integer
+        rating:
+          type: number
+        reviewCount:
+          type: integer
+        profileStrength:
+          type: integer
+        recentActivity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityItem"
+        totalViews:
+          type: integer
+      required:
+        - totalJobsCompleted
+        - activeListings
+        - rating
+        - reviewCount
+        - profileStrength
+        - totalViews
+
+    ActivityItem:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        description:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - type
+        - description
+        - createdAt
+
+    # ─── Categories ─────────────────────────────────────────────────────────
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        nameChichewa:
+          type: string
+        icon:
+          type: string
+        description:
+          type: string
+        subcategories:
+          type: array
+          items:
+            type: string
+        listingCount:
+          type: integer
+      required:
+        - id
+        - name
+        - icon
+
+    CategoriesResponse:
+      type: object
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/Category"
+      required:
+        - categories
+
+    # ─── Services ───────────────────────────────────────────────────────────
+    Service:
+      type: object
+      properties:
+        id:
+          type: string
+        workerId:
+          type: string
+        worker:
+          $ref: "#/components/schemas/User"
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        subcategory:
+          type: string
+        priceType:
+          type: string
+          enum: [fixed, negotiable, quote]
+        price:
+          type: number
+        priceDisplay:
+          type: string
+        location:
+          type: string
+        coverageArea:
+          type: array
+          items:
+            type: string
+        photos:
+          type: array
+          items:
+            type: string
+        isOnline:
+          type: boolean
+        isFeatured:
+          type: boolean
+        rating:
+          type: number
+        reviewCount:
+          type: integer
+        bookingCount:
+          type: integer
+        viewCount:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - workerId
+        - title
+        - category
+        - priceType
+        - location
+
+    ServiceDetail:
+      allOf:
+        - $ref: "#/components/schemas/Service"
+        - type: object
+          properties:
+            reviews:
+              type: array
+              items:
+                $ref: "#/components/schemas/Review"
+
+    CreateServiceBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        subcategory:
+          type: string
+        priceType:
+          type: string
+          enum: [fixed, negotiable, quote]
+        price:
+          type: number
+        location:
+          type: string
+        coverageArea:
+          type: array
+          items:
+            type: string
+        photos:
+          type: array
+          items:
+            type: string
+      required:
+        - title
+        - category
+        - priceType
+        - location
+
+    UpdateServiceBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        priceType:
+          type: string
+        isOnline:
+          type: boolean
+        photos:
+          type: array
+          items:
+            type: string
+
+    ServicesListResponse:
+      type: object
+      properties:
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/Service"
+        total:
+          type: integer
+      required:
+        - services
+        - total
+
+    BookServiceBody:
+      type: object
+      properties:
+        message:
+          type: string
+        scheduledAt:
+          type: string
+        budget:
+          type: number
+
+    Booking:
+      type: object
+      properties:
+        id:
+          type: string
+        serviceId:
+          type: string
+        customerId:
+          type: string
+        workerId:
+          type: string
+        status:
+          type: string
+        message:
+          type: string
+        scheduledAt:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - serviceId
+        - customerId
+        - workerId
+        - status
+
+    # ─── Jobs ────────────────────────────────────────────────────────────────
+    Job:
+      type: object
+      properties:
+        id:
+          type: string
+        customerId:
+          type: string
+        customer:
+          $ref: "#/components/schemas/User"
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        location:
+          type: string
+        budget:
+          type: number
+        budgetDisplay:
+          type: string
+        urgency:
+          type: string
+          enum: [normal, urgent, emergency]
+        status:
+          type: string
+          enum: [pending, in_progress, completed, cancelled]
+        applicationCount:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - customerId
+        - title
+        - category
+        - location
+        - urgency
+        - status
+
+    JobDetail:
+      allOf:
+        - $ref: "#/components/schemas/Job"
+        - type: object
+          properties:
+            applications:
+              type: array
+              items:
+                $ref: "#/components/schemas/JobApplication"
+
+    CreateJobBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        location:
+          type: string
+        budget:
+          type: number
+        urgency:
+          type: string
+          enum: [normal, urgent, emergency]
+      required:
+        - title
+        - category
+        - location
+        - urgency
+
+    UpdateJobBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+        budget:
+          type: number
+
+    JobsListResponse:
+      type: object
+      properties:
+        jobs:
+          type: array
+          items:
+            $ref: "#/components/schemas/Job"
+        total:
+          type: integer
+      required:
+        - jobs
+        - total
+
+    JobApplication:
+      type: object
+      properties:
+        id:
+          type: string
+        jobId:
+          type: string
+        workerId:
+          type: string
+        worker:
+          $ref: "#/components/schemas/User"
+        message:
+          type: string
+        quote:
+          type: number
+        status:
+          type: string
+          enum: [pending, accepted, rejected]
+        createdAt:
+          type: string
+      required:
+        - id
+        - jobId
+        - workerId
+        - status
+
+    ApplyJobBody:
+      type: object
+      properties:
+        message:
+          type: string
+        quote:
+          type: number
+
+    JobApplicationsResponse:
+      type: object
+      properties:
+        applications:
+          type: array
+          items:
+            $ref: "#/components/schemas/JobApplication"
+        total:
+          type: integer
+      required:
+        - applications
+        - total
+
+    # ─── Marketplace ────────────────────────────────────────────────────────
+    MarketplaceItem:
+      type: object
+      properties:
+        id:
+          type: string
+        sellerId:
+          type: string
+        seller:
+          $ref: "#/components/schemas/User"
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        type:
+          type: string
+          enum: [sale, rent]
+        price:
+          type: number
+        priceNegotiable:
+          type: boolean
+        location:
+          type: string
+        photos:
+          type: array
+          items:
+            type: string
+        condition:
+          type: string
+        isAvailable:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - sellerId
+        - title
+        - category
+        - type
+        - price
+        - location
+
+    CreateMarketplaceItemBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        type:
+          type: string
+          enum: [sale, rent]
+        price:
+          type: number
+        priceNegotiable:
+          type: boolean
+        location:
+          type: string
+        photos:
+          type: array
+          items:
+            type: string
+        condition:
+          type: string
+      required:
+        - title
+        - category
+        - type
+        - price
+        - location
+
+    MarketplaceListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketplaceItem"
+        total:
+          type: integer
+      required:
+        - items
+        - total
+
+    # ─── Messages ───────────────────────────────────────────────────────────
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: string
+        participants:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        lastMessage:
+          $ref: "#/components/schemas/Message"
+        unreadCount:
+          type: integer
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - participants
+
+    CreateConversationBody:
+      type: object
+      properties:
+        participantId:
+          type: string
+        initialMessage:
+          type: string
+      required:
+        - participantId
+
+    ConversationsResponse:
+      type: object
+      properties:
+        conversations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Conversation"
+        total:
+          type: integer
+      required:
+        - conversations
+        - total
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+        conversationId:
+          type: string
+        senderId:
+          type: string
+        sender:
+          $ref: "#/components/schemas/User"
+        content:
+          type: string
+        type:
+          type: string
+          enum: [text, image, quick_reply, system]
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - conversationId
+        - senderId
+        - content
+        - type
+
+    SendMessageBody:
+      type: object
+      properties:
+        content:
+          type: string
+        type:
+          type: string
+          enum: [text, image, quick_reply]
+      required:
+        - content
+
+    MessagesResponse:
+      type: object
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/Message"
+        total:
+          type: integer
+      required:
+        - messages
+        - total
+
+    # ─── Reviews ────────────────────────────────────────────────────────────
+    Review:
+      type: object
+      properties:
+        id:
+          type: string
+        reviewerId:
+          type: string
+        reviewer:
+          $ref: "#/components/schemas/User"
+        workerId:
+          type: string
+        serviceId:
+          type: string
+        jobId:
+          type: string
+        rating:
+          type: number
+        comment:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - reviewerId
+        - rating
+
+    CreateReviewBody:
+      type: object
+      properties:
+        workerId:
+          type: string
+        serviceId:
+          type: string
+        jobId:
+          type: string
+        rating:
+          type: number
+        comment:
+          type: string
+      required:
+        - rating
+
+    ReviewsResponse:
+      type: object
+      properties:
+        reviews:
+          type: array
+          items:
+            $ref: "#/components/schemas/Review"
+        averageRating:
+          type: number
+        total:
+          type: integer
+      required:
+        - reviews
+        - total
+
+    # ─── Notifications ──────────────────────────────────────────────────────
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        type:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+        isRead:
+          type: boolean
+        data:
+          type: object
+        createdAt:
+          type: string
+      required:
+        - id
+        - userId
+        - type
+        - title
+        - body
+        - isRead
+
+    NotificationsResponse:
+      type: object
+      properties:
+        notifications:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
+        unreadCount:
+          type: integer
+        total:
+          type: integer
+      required:
+        - notifications
+        - unreadCount
+        - total
+
+    # ─── Payments ───────────────────────────────────────────────────────────
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+        amount:
+          type: number
+        currency:
+          type: string
+        method:
+          type: string
+          enum: [airtel_money, tnm_mpamba]
+        purpose:
+          type: string
+          enum: [featured_listing, verified_badge, ad]
+        proofImageUrl:
+          type: string
+        transactionRef:
+          type: string
+        status:
+          type: string
+          enum: [pending, confirmed, rejected]
+        createdAt:
+          type: string
+      required:
+        - id
+        - userId
+        - amount
+        - method
+        - purpose
+        - status
+
+    SubmitPaymentBody:
+      type: object
+      properties:
+        amount:
+          type: number
+        method:
+          type: string
+          enum: [airtel_money, tnm_mpamba]
+        purpose:
+          type: string
+          enum: [featured_listing, verified_badge, ad]
+        proofImageUrl:
+          type: string
+        transactionRef:
+          type: string
+      required:
+        - amount
+        - method
+        - purpose
+
+    PaymentsResponse:
+      type: object
+      properties:
+        payments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Payment"
+        total:
+          type: integer
+      required:
+        - payments
+        - total
+
+    # ─── Admin ──────────────────────────────────────────────────────────────
+    AdminVerifyBody:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [verified, trusted]
+      required:
+        - type
+
+    AdminAnalytics:
+      type: object
+      properties:
+        totalUsers:
+          type: integer
+        totalWorkers:
+          type: integer
+        totalCustomers:
+          type: integer
+        totalServices:
+          type: integer
+        totalJobs:
+          type: integer
+        totalMarketplaceItems:
+          type: integer
+        totalMessages:
+          type: integer
+        pendingReports:
+          type: integer
+        pendingPayments:
+          type: integer
+        recentSignups:
+          type: integer
+        activeUsers:
+          type: integer
+        monthlyGrowth:
+          type: number
+      required:
+        - totalUsers
+        - totalWorkers
+        - totalCustomers
+        - totalServices
+        - totalJobs
+        - totalMarketplaceItems
+
+    UserReport:
+      type: object
+      properties:
+        id:
+          type: string
+        reporterId:
+          type: string
+        reporter:
+          $ref: "#/components/schemas/User"
+        reportedId:
+          type: string
+        reported:
+          $ref: "#/components/schemas/User"
+        reason:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - reporterId
+        - reportedId
+        - reason
+        - status
+
+    ReportsResponse:
+      type: object
+      properties:
+        reports:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserReport"
+        total:
+          type: integer
+      required:
+        - reports
+        - total
